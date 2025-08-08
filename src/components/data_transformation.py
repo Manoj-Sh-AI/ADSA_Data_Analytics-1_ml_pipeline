@@ -14,6 +14,7 @@ import os
 
 from src.utils import save_object
 
+
 # @dataclass is a Python decorator from the dataclasses module that makes it easier to create classes meant to store data without writing a lot of boilerplate code.
 @dataclass
 class DataTransformationConfig:
@@ -21,6 +22,7 @@ class DataTransformationConfig:
     > It just take the input data and transforms it into a format that can be used by the model.
     > Stores the file path where the preprocessor object will be saved for later use.
     """
+
     preprocessor_obj_file_path = os.path.join("artifacts", "proprocessor.pkl")
 
 
@@ -35,28 +37,31 @@ class DataTransformation:
         """
         try:
             # Specifying the numerical and categorical columns required for the transformation
-            numerical_columns = ['Occupation',
-                                'Marital_Status',
-                                'Product_Category_1', 
-                                'Product_Category_2', 
-                                'Product_Category_3']
-            
-            categorical_columns = [
-                'Gender', 
-                'Age', 
-                'City_Category', 
-                'Stay_In_Current_City_Years'
+            numerical_columns = [
+                "Occupation",
+                "Marital_Status",
+                "Product_Category_1",
+                "Product_Category_2",
+                "Product_Category_3",
             ]
 
+            categorical_columns = [
+                "Gender",
+                "Age",
+                "City_Category",
+                "Stay_In_Current_City_Years",
+            ]
 
             # Creating a numerical pipeline that will handle missing values and scale the numerical features using StandardScaler and SimpleImputer
             num_pipeline = Pipeline(
                 steps=[
-                    ("imputer", SimpleImputer(strategy="median")), # Mean or Median anything can be used according to the data, for ourcase median is used
+                    (
+                        "imputer",
+                        SimpleImputer(strategy="median"),
+                    ),  # Mean or Median anything can be used according to the data, for ourcase median is used
                     ("scaler", StandardScaler()),
                 ]
             )
-
 
             # Creating a categorical pipeline that will handle missing values, one-hot encode the categorical features, and scale them using StandardScaler
             # StandardScaler is used with with_mean=False because OneHotEncoder will create a sparse matrix
@@ -68,11 +73,9 @@ class DataTransformation:
                 ]
             )
 
-
             # Logging the categorical and numerical columns for debugging purposes
             logging.info(f"Categorical columns: {categorical_columns}")
             logging.info(f"Numerical columns: {numerical_columns}")
-
 
             # Combining the numerical and categorical pipelines into a single ColumnTransformer
             # ColumnTransformer allows us to apply different transformations to different columns
@@ -104,19 +107,19 @@ class DataTransformation:
             test_df = pd.read_csv(test_path)
             logging.info("Read train and test data completed")
 
-
             logging.info("Obtaining preprocessing object")
             preprocessing_obj = self.get_data_transformer_object()
 
-
             # Specifying the target column name and numerical columns
             target_column_name = "Purchase"
-            numerical_columns = ['Occupation',
-                                'Marital_Status',
-                                'Product_Category_1', 
-                                'Product_Category_2', 
-                                'Product_Category_3']
-            
+            numerical_columns = [
+                "Occupation",
+                "Marital_Status",
+                "Product_Category_1",
+                "Product_Category_2",
+                "Product_Category_3",
+            ]
+
             # Separating the input features and target feature for both train and test data
             input_feature_train_df = train_df.drop(columns=[target_column_name], axis=1)
             target_feature_train_df = train_df[target_column_name]
@@ -124,9 +127,12 @@ class DataTransformation:
             input_feature_test_df = test_df.drop(columns=[target_column_name], axis=1)
             target_feature_test_df = test_df[target_column_name]
 
-
-            logging.info(f"Applying preprocessing object on training dataframe and testing dataframe.")
-            input_feature_train_arr = preprocessing_obj.fit_transform(input_feature_train_df)
+            logging.info(
+                f"Applying preprocessing object on training dataframe and testing dataframe."
+            )
+            input_feature_train_arr = preprocessing_obj.fit_transform(
+                input_feature_train_df
+            )
             input_feature_test_arr = preprocessing_obj.transform(input_feature_test_df)
 
             train_arr = np.c_[
@@ -135,16 +141,19 @@ class DataTransformation:
             test_arr = np.c_[input_feature_test_arr, np.array(target_feature_test_df)]
 
             logging.info(f"Saved preprocessing object.")
-
+            # save_object function is inside utils.py
+            # its used to save the preprocessor object to the specified file path
             save_object(
                 file_path=self.data_transformation_config.preprocessor_obj_file_path,
                 obj=preprocessing_obj,
             )
 
+            # Returning the transformed train and test arrays in the format (train_arr, test_arr, preprocessor_obj_file_path)
             return (
                 train_arr,
                 test_arr,
                 self.data_transformation_config.preprocessor_obj_file_path,
             )
+
         except Exception as e:
             raise CustomException(e, sys)

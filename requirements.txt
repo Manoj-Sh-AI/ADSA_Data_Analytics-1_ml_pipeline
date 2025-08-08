@@ -5,9 +5,7 @@ matplotlib
 seaborn
 scipy
 dill
-warnings
-logging
 requests
-pathlib
-pickle
+xgboost
+catboost
 -e .

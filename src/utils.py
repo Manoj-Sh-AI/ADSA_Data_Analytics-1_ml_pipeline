@@ -1,7 +1,7 @@
 import os
 import sys
 
-import numpy as np 
+import numpy as np
 import pandas as pd
 import dill
 import pickle
@@ -9,6 +9,7 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import GridSearchCV
 
 from src.exception import CustomException
+
 
 def save_object(file_path, obj):
     """
@@ -24,22 +25,25 @@ def save_object(file_path, obj):
 
     except Exception as e:
         raise CustomException(e, sys)
-    
-# def evaluate_models(X_train, y_train,X_test,y_test,models,param):
+
+
+# def evaluate_models(X_train, y_train, X_test, y_test, models, param):
+#     """
+
+#     """
 #     try:
 #         report = {}
 
 #         for i in range(len(list(models))):
 #             model = list(models.values())[i]
-#             para=param[list(models.keys())[i]]
+#             para = param[list(models.keys())[i]]
 
-#             gs = GridSearchCV(model,para,cv=3)
-#             gs.fit(X_train,y_train)
+#             gs = GridSearchCV(model, para, cv=3)
+#             gs.fit(X_train, y_train)
 
 #             model.set_params(**gs.best_params_)
-#             model.fit(X_train,y_train)
 
-#             #model.fit(X_train, y_train)  # Train model
+#             model.fit(X_train, y_train)  # Train model
 
 #             y_train_pred = model.predict(X_train)
 
@@ -55,11 +59,57 @@ def save_object(file_path, obj):
 
 #     except Exception as e:
 #         raise CustomException(e, sys)
-    
-# def load_object(file_path):
-#     try:
-#         with open(file_path, "rb") as file_obj:
-#             return pickle.load(file_obj)
 
-#     except Exception as e:
-#         raise CustomException(e, sys)
+def evaluate_models(X_train, y_train, X_test, y_test, models, param):
+    """
+    Evaluate multiple regression models with hyperparameter tuning using GridSearchCV.
+
+    Parameters:
+    - X_train, y_train: Training data.
+    - X_test, y_test: Test data.
+    - models: dict of model name to model instance.
+    - param: dict of model name to hyperparameter grid.
+
+    Returns:
+    - report: dict mapping model name to a dict with keys:
+      'best_params', 'train_r2', 'test_r2'
+    """
+    try:
+        report = {}
+
+        for model_name, model in models.items():
+            params = param.get(model_name, {})
+            print(f"Training {model_name} with params grid: {params}")
+
+            gs = GridSearchCV(model, params, cv=3, n_jobs=-1, verbose=2)
+            gs.fit(X_train, y_train)
+
+            model.set_params(**gs.best_params_)
+            model.fit(X_train, y_train)
+
+            y_train_pred = model.predict(X_train)
+            y_test_pred = model.predict(X_test)
+
+            train_r2 = r2_score(y_train, y_train_pred)
+            test_r2 = r2_score(y_test, y_test_pred)
+
+            report[model_name] = {
+                "best_params": gs.best_params_,
+                "train_r2": train_r2,
+                "test_r2": test_r2
+            }
+
+        return report
+
+    except Exception as e:
+        raise CustomException(e, sys)
+
+
+
+def load_object(file_path):
+    try:
+        with open(file_path, "rb") as file_obj:
+            return pickle.load(file_obj)
+
+    except Exception as e:
+        raise CustomException(e, sys)
